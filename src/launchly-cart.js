@@ -132,15 +132,15 @@ cart = {
 
 		i_id = cart.item_id(element);
 		
-		console.log(cart.qty(i_id));
-
-		$.getJSON('/__/price_check/' + cart.variant_id(i_id) + '/' + cart.qty(i_id) + '.json',
-			{ authenticity_token: rails_authenticity_token },
-			function(data) { 
-				$(cart).trigger('cart.price', [data]);
-				$('#item_' + i_id + '_price').html(data.formatted_price); 
-			}
-		);
+		if (!(cart.qty(i_id) == '' || isNaN(parseInt(cart.qty(i_id))))) {
+			$.getJSON('/__/price_check/' + cart.variant_id(i_id) + '/' + cart.qty(i_id) + '.json',
+				{ authenticity_token: rails_authenticity_token },
+				function(data) { 
+					$(cart).trigger('cart.price', [data]);
+					$('#item_' + i_id + '_price').html(data.formatted_price); 
+				}
+			);			
+		}
 
 	},
 
