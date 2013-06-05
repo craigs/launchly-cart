@@ -1,2 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Cart - Functions</title>
+		<link href="../libs/bootstrap-combined.min.css" rel="stylesheet">
+		<link href="../libs/font-awesome.min.css" rel="stylesheet">
+		<link href="../libs/font-awesome-ie7.min.css" rel="stylesheet">
+	</head>
+<body>
 
-<a href="#" class="btn" data-cart-function="empty">Empty Cart</a>
+<button class="btn" data-cart-function="empty">Empty Cart</button>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+<script src="//raw.github.com/wycats/handlebars.js/1.0.0/dist/handlebars.js"></script>
+
+<script>
+$(document).ready(function() {
+	/* empty cart links */
+	$(document).on('click', 'button[data-cart-function="empty"]', function(event) { alert('xxx'); });
+});
+</script>
+
+</body>
+</html>
