@@ -30,34 +30,34 @@
 cart = {
 
 	dec: function(element) {
-		$.post("/{{ locale }}/__/cart/inc.json", cart.variant_data(element), function(data) {
+		$.post("/__/cart/inc.json", cart.variant_data(element), function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});
 	},
 
 	/* empty the shopping cart */
 	empty: function() {
-		$.get("/{{ locale }}/__/cart/empty.json", { authenticity_token: rails_authenticity_token }, function(data) {
+		$.get("/__/cart/empty.json", { authenticity_token: rails_authenticity_token }, function(data) {
 			$(cart).trigger('cart.empty', [data]);
 		});
 	},
 
 	/* get the current shopping cart */
 	get: function(element) {
-		$.get("/{{ locale }}/__/cart.json", { authenticity_token: rails_authenticity_token }, function(data) { 
+		$.get("/__/cart.json", { authenticity_token: rails_authenticity_token }, function(data) { 
 			$(cart).trigger('cart.changed', [data]);
 		});
 	},
 
 	/* increment an item in the cart */
 	inc: function(element) {
-		$.post("/{{ locale }}/__/cart/inc.json", cart.variant_data(element), function(data) {
+		$.post("/__/cart/inc.json", cart.variant_data(element), function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});
 	},
 
 	set: function(element) {
-		$.post("/{{ locale }}/__/cart/set.json", cart.variant_data(element), function(data) {
+		$.post("/__/cart/set.json", cart.variant_data(element), function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});
 	},
@@ -132,7 +132,7 @@ cart = {
 
 		i_id = cart.item_id(element);
 
-		$.getJSON('/{{ locale }}/__/price_check/' + cart.variant_id(i_id) + '/' + cart.qty(i_id) + '.json',
+		$.getJSON('/__/price_check/' + cart.variant_id(i_id) + '/' + cart.qty(i_id) + '.json',
 			{ authenticity_token: rails_authenticity_token },
 			function(data) { 
 				$(cart).trigger('cart.price', [data]);
@@ -158,7 +158,7 @@ cart = {
 	},	
 
 	remove: function(element) {
-		$.get("/{{ locale }}/__/cart/remove/" + element.data('variant') + ".json", function(data) {
+		$.get("/__/cart/remove/" + element.data('variant') + ".json", function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});		
 	},
