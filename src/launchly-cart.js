@@ -131,6 +131,8 @@ cart = {
 	price: function(element) {
 
 		i_id = cart.item_id(element);
+		
+		console.log(cart.qty(i_id));
 
 		$.getJSON('/__/price_check/' + cart.variant_id(i_id) + '/' + cart.qty(i_id) + '.json',
 			{ authenticity_token: rails_authenticity_token },
