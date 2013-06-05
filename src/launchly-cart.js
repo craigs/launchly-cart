@@ -6,46 +6,42 @@
  * Licensed under the MIT license.
  */
 
+/* List of methods
+ *
+ * add            
+ * dec            
+ * empty          
+ * get 
+ * update 
+ * inc                    
+ * remove                 
+ * set                    
+ * pay                    
+ * payment_type_from_number */
+
+/* List of events                                                                   */
+/* --------------                                                                   */
+/* cart.changed           the contents of the shopping cart has changed             */
+/* cart.recieved          a new cart has been downloaded                            */
+/* cart.payment.success   the order was successfully paid for                       */
+/* cart.payment.failure   the payment was rejected and the order was not submitted  */
+/* cart.price             a price check has been retrieved                          */
+
 cart = {
 
-	/* List of methods                                                                  */
-	/* ---------------                                                                  */
-	/* add                                                                              */
-	/* dec                                                                              */
-	/* empty                                                                            */
-	/* get */
-	/* update */
-	/* inc                                                                              */
-	/* remove                                                                           */
-	/* set                                                                              */
-	/* pay                                                                              */
-	/* payment_type_from_number                                                         */
-	/*                                                                                  */
-
-	/* List of events                                                                   */
-	/* --------------                                                                   */
-	/* cart.changed           the contents of the shopping cart has changed             */
-	/* cart.recieved          a new cart has been downloaded                            */
-	/* cart.payment.success   the order was successfully paid for                       */
-	/* cart.payment.failure   the payment was rejected and the order was not submitted  */
-	/* cart.price             a price check has been retrieved                          */
-	/*                                                                                  */
 
 	dec: function(element) {
-
 		$.post("/{{ locale }}/__/cart/inc.json", cart.variant_data, function(data) {
 			$(cart).trigger('cart.changed', [data]);
+			$(cart).trigger('cart.empty', [data]);
 		});
-
 	},
 
 	/* empty the shopping cart */
 	empty: function() {
-
 		$.get("/{{ locale }}/__/cart/empty.json", { authenticity_token: rails_authenticity_token }, function(data) {
-			$(cart).trigger('cart.changed', [data]);
+			$(cart).trigger('cart.empty', [data]);
 		});
-
 	},
 
 	get: function(element) {
@@ -168,6 +164,9 @@ cart = {
 	}	
 
 	remove: function(element) {
+		$.post("/{{ locale }}/__/cart/remove.json", cart.variant_data, function(data) {
+			$(cart).trigger('cart.changed', [data]);
+		});		
 	},
 
 	update: function(element) {
