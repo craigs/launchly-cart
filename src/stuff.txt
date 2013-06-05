@@ -1,0 +1,323 @@
+{{ 'asset/file/51ad5be957817eabda000535/handlebars.js' | asset_url | javascript_include }}
+{{ 'https://rsmpq986.secure-launch.ly/spitfire/admin/js/bootstrap-editable.min.js' | javascript_include }}
+
+
+{% javascript %}
+
+	var template_header = Handlebars.compile($('#cart-header-template').html());
+	var template_cart = Handlebars.compile($('#cart-template').html());
+	var template_payment_success = Handlebars.compile($('#cart-payment-success-template').html());
+	var template_state_select = Handlebars.compile($('#state-select-template').html());
+	var template_shipping_address_label = Handlebars.compile($('#shipping-label-address-template').html());
+	var template_shopping_cart = Handlebars.compile($('#shopping-cart-template').html());
+	var template_shopping_cart_empty = Handlebars.compile($('#shopping-cart-empty-template').html());
+	var selected_billing_state;
+	var selected_shipping_state;
+
+function populate_states(element, name) {
+	var el = $('#state-' + name + '-select-placeholder');
+	el.empty();
+	var country = element.val();
+	var context = null;
+
+	if (country != '') {		
+		var uri = '/{{locale}}/__/countries/' + country + '/entities.json';
+		$.get(uri, function(data) {
+			context = { states: data.regions, type: name };
+			el.html(template_state_select(context));
+
+			if (typeof selected_billing_state != 'undefined') { $('#billing_state').val(selected_billing_state); update_shipping_address_label(); }
+			if (typeof selected_shipping_state != 'undefined') { $('#shipping_state').val(selected_shipping_state); update_shipping_address_label(); }
+		});
+	}
+}
+
+function update_shipping_address_label() {
+	var context = {
+		line1: $('input[name="billing_line1"]').val(),
+		line2: $('input[name="billing_line2"]').val(),
+		suburb: $('input[name="billing_suburb"]').val(),
+		post_code: $('input[name="billing_post_code"]').val(),
+		state: ($('select[name="billing_state"] option:selected').val() != '') ? $('select[name="billing_state"] option:selected').text() : '',
+		country: ($('select[name="billing_country"] option:selected').val() != '') ? $('select[name="billing_country"] option:selected').text() : ''
+	};
+	$('#shipping-label-address-placeholder').html(template_shipping_address_label(context));
+}
+
+function ship_to_alternate(event) {
+	event.preventDefault();
+	$('#shipping-label-address-placeholder').hide();
+	$('#shipping-form-placeholder').show();
+	$('#shipping_same_as_billing').val(0);
+}
+
+function ship_to_billing(event) {
+	event.preventDefault();
+	$('#shipping-form-placeholder').hide();
+	$('#shipping-label-address-placeholder').show();
+	$('#shipping_same_as_billing').val(1);
+}
+
+/* update shopping cart display */
+function update_cart(data, show) {
+	
+	if (typeof show == "undefined") {
+		show = false;
+	}
+		
+	if (typeof data == "undefined") {
+		$.get("/{{ locale }}/__/cart.json",
+			{ authenticity_token: rails_authenticity_token },
+			function(data) { update_cart(data, show); });
+	} else {
+				
+		if (data.empty == true) {
+			$('#cart-header-placeholder').fadeOut();
+			$('#cart-placeholder').fadeOut();
+			$('#store-side').html(template_shopping_cart_empty);
+		} else {
+			selected_billing_state = data.billing_state;
+			selected_shipping_state = data.shipping_state;
+			
+			/* add in some useful data */			
+			data.singular = (data.items_count == 1);
+			data.plural = (data.items_count > 1);
+			var currentYear = (new Date).getFullYear();
+			data.expiry_years = [];
+						
+			for (i=0;i<=10;i++) {
+				data.expiry_years.push(currentYear + i);
+			}
+
+			$('#cart-header-placeholder').html(template_header(data));
+			$('#cart-header-placeholder').show();
+						
+			$('#cart-container').html(template_cart(data));
+			
+			$('#billing_country').val(data.billing_country).change();
+			$('#shipping_country').val(data.shipping_country).change();
+			$('#billing_state').val(data.billing_state);
+			$('#shipping_state').val(data.shipping_state);
+						
+			if (show == true) {
+				$('#cart-placeholder').modal({ backdrop: false });				
+			}
+			
+			update_shipping_address_label();
+			
+			$('#store-side').html(template_shopping_cart(data));
+			
+			$('#coupon-code').editable();
+		}
+	}
+}
+ 
+/* add an item variant to the shopping cart */
+function add_to_cart(event, element) {
+	element.attr("disabled", true);
+	i_id = element.data('item');
+	v_id = $('#v_' + i_id + ' :selected').val();
+	if (typeof v_id == "undefined") {
+		v_id = $('#v_' + i_id).val();
+	}
+	qty = $('#q_' + i_id).val();
+	data = {};
+	data['authenticity_token'] = rails_authenticity_token;
+	data['v'] = []
+	data['v'].push(v_id);
+	data['q_' + v_id] = qty;
+
+	$.post("/{{ locale }}/__/cart/set.json", data, function(data) { update_cart(data); });
+	element.removeAttr("disabled");
+	flash.message('success', 'cart updated', { timer: 5 });	
+}
+
+/* empty shopping cart */
+function empty_cart() {
+	data = {}
+	data['authenticity_token'] = rails_authenticity_token;
+	$.get("/{{ locale }}/__/cart/empty.json", data, function(data) { update_cart(data); });
+	$('#cart-placeholder').modal('hide');
+	flash.message('success', 'cart emptied!', { timer: 5 });	
+}
+
+/* select payment type and highlight payment icons */
+function select_payment_type(payment_type) {
+	$('#payment_type').val(payment_type);
+	$(".payment-icon[data-type='" + payment_type + "']").fadeTo('fast', 1);
+	$(".payment-icon:not([data-type='" + payment_type + "'])").fadeTo('slow', 0.2);
+}
+
+/* extract the payment type from the credit card number */
+function payment_type_from_number(card_number) {	
+
+	card_type = '';
+	card_number = card_number.replace(/[^\d]/g,'');
+
+	// see http://en.wikipedia.org/wiki/List_of_Bank_Identification_Numbers
+	if (card_number.match(/^37\d{13}/)) { card_type = 'american_express'; }
+	if (card_number.match(/^4\d{15}/) || card_number.match(/^4\d{12}/)) { card_type = 'visa'; }
+	if (card_number.match(/^5[1-5]\d{14}$/)) { card_type = 'master'; }
+	if (card_number.match(/^36\d{11}/)) { card_type = 'diners_club'; }	
+	
+	return card_type;	
+}
+
+/* update a price indicator */
+function update_price(element) {
+
+	i_id = element.data('item');
+	
+	v = $('#v_' + i_id).val();
+	q = $('#q_' + i_id).val();          
+
+	$.getJSON('/{{ locale }}/__/price_check/' + v + '/' + q + '.json',
+		{ authenticity_token: rails_authenticity_token },
+		function(data) { 
+			$('#item_' + i_id + '_price').html(data.formatted_price); 
+		}
+	);
+}
+
+/* process a payment */
+function process_payment() {
+	data = {};
+	data['_launch_ly_session'] = $('#session_id').val();
+	data['reference'] = $('#cart_reference').val();
+	data['first_name'] = $('#card_first_name').val();
+	data['last_name'] = $('#card_last_name').val();
+	data['card_number'] = $('#card_number').val();
+	data['payment_type'] = $('#payment_type').val();
+	data['expires_month'] = $('#card_expires_month').val();
+	data['expires_year'] = $('#card_expires_year').val();
+	data['card_verification'] = $('#card_verification').val();
+
+	$.ajax({
+	  type: "POST",
+	  url: "{{ '/__/pay/cart.json' | secure_url }}",
+	  data: data,
+	  success: function(data) { payment_status(data); },
+	  error: function(XMLHttpRequest, textStatus, errorThrown) {
+		response = $.parseJSON(XMLHttpRequest.responseText);
+		console.log(response);
+	     alert("Sorry, there was a payment error.");
+	  }
+	});
+}
+
+function payment_status(data) {
+	$('#cart-payment-success-container').html(template_payment_success(data));	
+	$('#cart-payment-placeholder').modal('hide');
+	$('#cart-payment-success-placeholder').modal({ backdrop: false });
+	update_cart();
+}
+
+$(document).ready(function() {
+
+	/* manually selecting a payment type */
+	$(document).on('click', '.payment-icon', function(event) { select_payment_type($(this).data('type')); });
+	
+	/* changing card number must change payment type */
+	$(document).on('change', '#card_number', function(event) { select_payment_type(payment_type_from_number($('#card_number').val())); });
+
+	/* add to cart links */
+	//$(document).on('click', 'button[name="add"]', function(event) { add_to_cart(event, $(this)); });
+	$(document).on('click', 'button[name="add"]', function(event) { 
+		event.preventDefault();
+		add_to_cart(event, $(this));
+	});
+
+	/* empty cart links */
+	$(document).on('click', '.empty-cart-link', function(event) { empty_cart(); });
+
+	/* show cart links */
+	$(document).on('click', 'a.show-cart-link', function(event) { 
+		event.preventDefault();
+		$('#cart-placeholder').modal({ backdrop: false }); 
+	});
+	
+	/* show detail link */
+	$(document).on('click', 'a.show-detail-link', function(event) { 
+		event.preventDefault(); 
+		$('#cart-details-placeholder').modal({ backdrop: false }); 
+	});
+
+	/* on variant or quantity change, update price */
+	$(document).on('change', 'select[name=v]', function(event) { update_price($(this)); });
+	$(document).on('keyup', 'input[name=q]', function(event) { update_price($(this)); });
+
+	/* fade in/out cvv icon */
+	$(document).on('focus', '#card_verification', function(event) { $('#cvv-icon').fadeTo('fast', 1); });
+	$(document).on('blur', '#card_verification', function(event) { $('#cvv-icon').fadeTo('fast', 0.2); });
+
+	/* pay now button */
+	$(document).on('click', '#pay_now', function(event) { process_payment(); });
+
+	/* on country dropdown change, show/hide state dropdown */
+	$(document).on('change', '#billing_country', function(event) { populate_states($(this), 'billing'); });
+	$(document).on('change', '#shipping_country', function(event) { populate_states($(this), 'shipping'); });
+	
+	/* on order billing input field pressed, update shipping address label */
+	$(document).on('change', 'select[name^="billing"]', function(event) { update_shipping_address_label(); });
+	$(document).on('keyup', 'input[name^="billing"]', function(event) { update_shipping_address_label(); });
+	
+	$(document).on('click', '#ship-to-alternate', function(event) { ship_to_alternate(event); });
+	$(document).on('click', '#ship-to-billing', function(event) { ship_to_billing(event); });
+
+	/* on click show detail, show detail modal */
+	$(document).on('click', 'a.show-address-details', function(event) {
+		event.preventDefault();
+		$('#cart-placeholder').modal('hide');
+		$('#cart-details-placeholder').modal({ 
+			backdrop: false 
+		});
+	});
+	
+	/* update cart button */
+	$(document).on('click', '.update-cart-link', function(event){
+      
+		$(this).attr("disabled", true);
+		event.preventDefault();
+
+		data = {};
+		data['authenticity_token'] = rails_authenticity_token;
+				
+		data['billing_line1'] = $('#billing_line1').val();
+		data['billing_line2'] = $('#billing_line2').val();
+		data['billing_suburb'] = $('#billing_suburb').val();
+		data['billing_state'] = $('#billing_state').val();
+		data['billing_state_other'] = $('#billing_state_other').val();
+		data['billing_country'] = $('#billing_country').val();
+		data['billing_post_code'] = $('#billing_post_code').val();
+		data['shipping_same_as_billing'] = $('#shipping_same_as_billing').val();
+
+		data['shipping_line1'] = $('#shipping_line1').val();
+		data['shipping_line2'] = $('#shipping_line2').val();
+		data['shipping_suburb'] = $('#shipping_suburb').val();
+		data['shipping_state'] = $('#shipping_state').val();
+		data['shipping_state_other'] = $('#shipping_state_other').val();
+		data['shipping_country'] = $('#shipping_country').val();
+		data['shipping_post_code'] = $('#shipping_post_code').val();
+
+		data['coupon_code'] = $('#coupon_code').val();
+		data['instructions_to_seller'] = $('#instructions_to_seller').val();
+
+		data['v'] = []
+		
+		$('#cart-placeholder input[name="cart-quantity"]').each(function(i, obj) {
+			v_id = $(this).attr('data-item');
+			data['v'].push(v_id);
+			data['q_' + v_id] = $(obj).val();
+		});
+		
+		$.post("/{{ locale }}/__/cart.json", data, function(data) { update_cart(data, false); });
+
+		$(this).removeAttr("disabled");
+	});
+
+	update_cart();
+
+});
+
+
+{% endjavascript %}

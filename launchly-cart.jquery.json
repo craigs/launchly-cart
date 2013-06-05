@@ -1,0 +1,26 @@
+{
+  "name": "launchly-cart",
+  "title": "launch.ly Shopping Cart",
+  "description": "JQuery shopping cart plugin to launch.ly",
+  "version": "0.0.1",
+  "homepage": "https://github.com/craig/launchly-cart",
+  "author": {
+    "name": "Craig Sullivan",
+    "email": "craig@melbourne-systems.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/craig/launchly-cart.git"
+  },
+  "bugs": "https://github.com/craig/launchly-cart/issues",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/craig/launchly-cart/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {
+    "jquery": "*"
+  },
+  "keywords": []
+}
