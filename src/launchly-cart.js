@@ -131,9 +131,11 @@ cart = {
 	price: function(element) {
 
 		i_id = cart.item_id(element);
+		qty = cart.qty(i_id);
 		
-		if (!(cart.qty(i_id) == '' || isNaN(parseInt(cart.qty(i_id))))) {
-			$.getJSON('/__/price_check/' + cart.variant_id(i_id) + '/' + cart.qty(i_id) + '.json',
+		if (!(qty == '' || isNaN(parseInt(qty)))) {
+			
+			$.getJSON('/__/price_check/' + cart.variant_id(i_id) + '/' + qty + '.json',
 				{ authenticity_token: rails_authenticity_token },
 				function(data) { 
 					$(cart).trigger('cart.price', [data]);
