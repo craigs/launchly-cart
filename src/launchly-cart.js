@@ -29,11 +29,9 @@
 
 cart = {
 
-
 	dec: function(element) {
-		$.post("/{{ locale }}/__/cart/inc.json", cart.variant_data, function(data) {
+		$.post("/{{ locale }}/__/cart/inc.json", cart.variant_data(element), function(data) {
 			$(cart).trigger('cart.changed', [data]);
-			$(cart).trigger('cart.empty', [data]);
 		});
 	},
 
@@ -44,51 +42,46 @@ cart = {
 		});
 	},
 
+	/* get the current shopping cart */
 	get: function(element) {
 		$.get("/{{ locale }}/__/cart.json", { authenticity_token: rails_authenticity_token }, function(data) { 
-			$(cart).trigger('cart.recieved', [data]);
-		});
-	},
-
-	inc: function(element) {
-		$.post("/{{ locale }}/__/cart/inc.json", cart.variant_data, function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});
 	},
 
-	/* add a variant to the shopping cart */
-	add: function(element) {
-		$.post("/{{ locale }}/__/cart/add.json", cart.variant_data, function(data) {
+	/* increment an item in the cart */
+	inc: function(element) {
+		$.post("/{{ locale }}/__/cart/inc.json", cart.variant_data(element), function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});
 	},
 
 	set: function(element) {
-		$.post("/{{ locale }}/__/cart/set.json", cart.variant_data, function(data) {
+		$.post("/{{ locale }}/__/cart/set.json", cart.variant_data(element), function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});
 	},
 
 	item_id: function(element) {
-		return element.data('item')
+		return element.data('item');
 	},
 
 	variant_id: function(item_id) {
 
-		v_id = $('#v_' + i_id + ' :selected').val();
+		variant_id = $('#v_' + item_id + ' :selected').val();
 
-		if (typeof v_id == "undefined") {
-			v_id = $('#v_' + i_id).val();
+		if (typeof variant_id == "undefined") {
+			variant_id = $('#v_' + item_id).val();
 		}
 
-		return v_id;
+		return variant_id;
 	},
 
 	qty: function(item_id) {
 		return $('#q_' + item_id).val();
 	},
 
-	variant_data: function() {
+	variant_data: function(element) {
 
 		i_id = cart.item_id(element);
 		v_id = cart.variant_id(i_id);
@@ -102,7 +95,7 @@ cart = {
 		data['v'].push(v_id);
 		data['q_' + v_id] = qty;
 
-		return data
+		return data;
 	},
 
 
@@ -134,7 +127,8 @@ cart = {
 
 	},
 
-	price_check: function(element) {
+	/* get a price check on an item */
+	price: function(element) {
 
 		i_id = cart.item_id(element);
 
@@ -161,15 +155,15 @@ cart = {
 		if (card_number.match(/^36\d{11}/)) { card_type = 'diners_club'; }	
 
 		return card_type;	
-	}	
+	},	
 
 	remove: function(element) {
-		$.post("/{{ locale }}/__/cart/remove.json", cart.variant_data, function(data) {
+		$.get("/{{ locale }}/__/cart/remove/" + element.data('variant') + ".json", function(data) {
 			$(cart).trigger('cart.changed', [data]);
 		});		
 	},
 
 	update: function(element) {
-	},	
+	}
 
 };
